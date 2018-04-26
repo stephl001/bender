@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bender", "Bender\Bender.fsproj", "{278AC0A5-75CE-4535-AEE0-FD0A7F87EBDF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{278AC0A5-75CE-4535-AEE0-FD0A7F87EBDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{278AC0A5-75CE-4535-AEE0-FD0A7F87EBDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{278AC0A5-75CE-4535-AEE0-FD0A7F87EBDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{278AC0A5-75CE-4535-AEE0-FD0A7F87EBDF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC9A0D9C-DEE6-44D7-9FCB-64CA8EFCDFC9}
+	EndGlobalSection
+EndGlobal
