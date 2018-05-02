@@ -26,7 +26,7 @@ type Map = Map of MapItem [,]
 
 type BenderMode = Sober | Breaker
 type Outcome = 
-    | Direction of Direction
+    | Directions of Direction list
     | Loop
 
 module Priority =
