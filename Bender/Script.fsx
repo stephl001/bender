@@ -9,16 +9,21 @@ open BenderSolver
 // Define your library scripting code here
 let constReader () =
     [
-        "##########"
-        "#        #"
-        "#  S   W #"
-        "#        #"
-        "#  $     #"
-        "#        #"
-        "#@       #"
-        "#        #"
-        "#E     N #"
-        "##########"
+        "###############"
+        "#      IXXXXX #"
+        "#  @          #"
+        "#E S          #"
+        "#             #"
+        "#  I          #"
+        "#  B          #"
+        "#  B   S     W#"
+        "#  B   T      #"
+        "#             #"
+        "#         T   #"
+        "#         B   #"
+        "#N          W$#"
+        "#        XXXX #"
+        "###############"
     ] |> Seq.ofList
 
 //let moves = getMoveListFromReader constReader

@@ -72,7 +72,9 @@ module MapReader =
         let rowCount = posMap |> Array2D.length1
         [0..rowCount-1] |> List.collect (fun r -> posMap.[r,*] |> List.ofArray)
     let find map item = 
-        map |> flatten |> List.find (snd >> ((=) item)) |> fst
+        map |> flatten |> List.filter (snd >> ((=) item))
+    let findFirst map =
+        find map >> List.head >> fst
     let getAt (Map map) {Row=r;Column=c} =
         map.[r,c]
     let setAt (Map map) {Row=r;Column=c} value =
@@ -83,22 +85,34 @@ module MapReader =
 module BenderSolver =
     open Priority
     open MapReader
+    open System
+    open System.Security.Cryptography
+    open System.Security.Cryptography
+
+    type OutputWriter = string list -> unit
         
     type BenderState = {
         CurrentPos: Position
         CurrentDirection: Direction
         DirPriority: DirectionPriority
         Mode: BenderMode
-        RecordedMoves: Direction list
+        RecordedMoves: (Direction*MapItem) list
     }
 
     let initState map = { 
-        CurrentPos=find map Start
+        CurrentPos=findFirst map Start
         CurrentDirection=South
         DirPriority=Default
         Mode=Sober
         RecordedMoves=[]
     }
+
+    let teleporters map = 
+        find map Teleporter |> List.map fst
+
+    let getTeleportPosition map pos =
+        let allTeleporters = teleporters map
+        if pos = allTeleporters.[0] then allTeleporters.[1] else allTeleporters.[0]
 
     let inverseMode = function
     | Sober -> Breaker
@@ -121,6 +135,7 @@ module BenderSolver =
         | _ -> true
 
     let move map ({CurrentPos=pos; CurrentDirection=dir;DirPriority=priority;Mode=mode;RecordedMoves=moves} as state)  = 
+        let getItem = getAt map
         let nextPositionInfo = 
             getPossibleDirections dir priority 
             |> List.map (fun d -> (getSiblingPos pos d),d)
@@ -128,17 +143,18 @@ module BenderSolver =
             |> List.filter (fst>>(isValidTargetPosition map mode))
             |> List.head
         let (nextPos,nextDirection) = nextPositionInfo
-        {state with CurrentPos=nextPos; CurrentDirection=nextDirection; RecordedMoves=nextDirection::moves}
+        {state with CurrentPos=nextPos; CurrentDirection=nextDirection; RecordedMoves=(nextDirection,getItem pos)::moves}
 
-    let rec solve map ({CurrentPos=pos;CurrentDirection=dir;DirPriority=priority;Mode=mode;RecordedMoves=moves} as state) =
+    let rec solve map ({CurrentPos=pos;DirPriority=priority;Mode=mode;RecordedMoves=moves} as state) =
         let setItem = setAt map
         let moveBender = move map
         let solveBender = solve map
         let moveAndSolve = moveBender >> solveBender
+        let getTeleportPosition' = getTeleportPosition map
         
         let currentMapItem = getAt map pos
         match currentMapItem with
-        | SuicideShack -> moves |> List.rev
+        | SuicideShack -> moves |> (List.rev >> List.map fst) |> Directions
         | Obstacle Breakable -> 
             let newMap = setItem pos Blank |> Map
             move newMap state |> solve newMap
@@ -148,9 +164,28 @@ module BenderSolver =
             moveAndSolve {state with Mode=inverseMode mode}
         | CircuitInverter ->
             moveAndSolve {state with DirPriority=inverseDirectionPriorities priority}
-        | Teleporter -> failwith "Not implemented!"
+        | Teleporter -> 
+            let newPosition = getTeleportPosition' pos
+            {state with CurrentPos=newPosition} |> moveAndSolve
         | Obstacle Unbreakable -> failwith "Invalid state"
         | Start | Blank -> moveAndSolve state
 
     let getMoveList map = initState map |> solve map
     let getMoveListFromReader = readMap >> getMoveList
+    let moveListToStringList = function
+    | Directions dirs -> dirs |> List.map string
+    | Loop -> ["LOOP"]
+    let getMoveStringsFromReader = getMoveListFromReader >> moveListToStringList
+    let inputReaderToOutputWriter (writer:OutputWriter) = getMoveStringsFromReader >> writer
+
+    let readConsole _ = Console.In.ReadLine()
+    let consoleReader() = 
+        seq {
+            let firstLine = Console.In.ReadLine()
+            let lines = firstLine.Split ' ' |> Array.map Int32.Parse |> Array.head
+            for i in [1..lines] do yield Console.In.ReadLine()
+        }
+    let writeToConsole (s:string) = Console.Out.WriteLine(s.ToUpperInvariant())
+    let consoleWriter = List.iter writeToConsole
+
+    //consoleReader |> inputReaderToOutputWriter consoleWriter
