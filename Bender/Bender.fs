@@ -86,17 +86,16 @@ module BenderSolver =
     open Priority
     open MapReader
     open System
-    open System.Security.Cryptography
-    open System.Security.Cryptography
 
     type OutputWriter = string list -> unit
+    type RecordedMove = Direction*MapItem
         
     type BenderState = {
         CurrentPos: Position
         CurrentDirection: Direction
         DirPriority: DirectionPriority
         Mode: BenderMode
-        RecordedMoves: (Direction*MapItem) list
+        RecordedMoves: RecordedMove list
     }
 
     let initState map = { 
@@ -134,6 +133,18 @@ module BenderSolver =
         | Obstacle Breakable when mode=Sober -> false
         | _ -> true
 
+    let toStepSequence step (list:RecordedMove list) =
+        [ 0 .. step .. (list |> List.length)-1] 
+        |> Seq.map (fun i -> List.item i list)
+
+    let tortoise = toStepSequence 1
+    let hare = toStepSequence 2
+
+    let isLoop list =
+        let t = tortoise list
+        let h = hare list
+        (t,h) ||> Seq.zip |> Seq.filter (fun (a,b) -> a=b) |> Seq.length |> (=) 20
+
     let move map ({CurrentPos=pos; CurrentDirection=dir;DirPriority=priority;Mode=mode;RecordedMoves=moves} as state)  = 
         let getItem = getAt map
         let nextPositionInfo = 
@@ -143,7 +154,7 @@ module BenderSolver =
             |> List.filter (fst>>(isValidTargetPosition map mode))
             |> List.head
         let (nextPos,nextDirection) = nextPositionInfo
-        {state with CurrentPos=nextPos; CurrentDirection=nextDirection; RecordedMoves=(nextDirection,getItem pos)::moves}
+        {state with CurrentPos=nextPos; CurrentDirection=nextDirection; RecordedMoves=moves@[nextDirection,getItem pos]}
 
     let rec solve map ({CurrentPos=pos;DirPriority=priority;Mode=mode;RecordedMoves=moves} as state) =
         let setItem = setAt map
@@ -154,7 +165,7 @@ module BenderSolver =
         
         let currentMapItem = getAt map pos
         match currentMapItem with
-        | SuicideShack -> moves |> (List.rev >> List.map fst) |> Directions
+        | SuicideShack -> moves |> List.map fst |> Directions
         | Obstacle Breakable -> 
             let newMap = setItem pos Blank |> Map
             move newMap state |> solve newMap
@@ -168,7 +179,10 @@ module BenderSolver =
             let newPosition = getTeleportPosition' pos
             {state with CurrentPos=newPosition} |> moveAndSolve
         | Obstacle Unbreakable -> failwith "Invalid state"
-        | Start | Blank -> moveAndSolve state
+        | Start | Blank -> 
+            if isLoop moves 
+            then Loop
+            else moveAndSolve state
 
     let getMoveList map = initState map |> solve map
     let getMoveListFromReader = readMap >> getMoveList
